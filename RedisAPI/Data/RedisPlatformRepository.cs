@@ -20,18 +20,19 @@ public class RedisPlatformRepository : IPlatformRepository
 
         var database = _redis.GetDatabase();
         var jsonPlatform = JsonSerializer.Serialize(platform);
-        database.StringSet(platform.Id, jsonPlatform);
-        database.SetAdd("PlatformsSet", jsonPlatform);
+        database.HashSet("hashPlatform", new HashEntry[]
+        {
+            new HashEntry(platform.Id, jsonPlatform)
+        });
     }
 
     public IEnumerable<Platform?>? GetAllPlatforms()
     {
         var database = _redis.GetDatabase();
-        var platformsSet = database.SetMembers("PlatformsSet");
-        if (platformsSet.Length > 0)
+        var completeHash = database.HashGetAll("hashPlatform");
+        if (completeHash.Length > 0)
         {
-            var platformsList = Array.ConvertAll(platformsSet, val => JsonSerializer.Deserialize<Platform>(val)).ToList();
-            return platformsList;
+            return Array.ConvertAll(completeHash, val => JsonSerializer.Deserialize<Platform>(val.Value)).ToList();
         }
 
         return null;
@@ -40,7 +41,7 @@ public class RedisPlatformRepository : IPlatformRepository
     public Platform? GetPlatformById(string id)
     {
         var database = _redis.GetDatabase();
-        var jsonPlatform = database.StringGet(id);
+        var jsonPlatform = database.HashGet("hashPlatform", id);
         if (!string.IsNullOrEmpty(jsonPlatform))
         {
             return JsonSerializer.Deserialize<Platform>(jsonPlatform);
