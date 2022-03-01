@@ -31,4 +31,10 @@ public class PlatformController : ControllerBase
         _platformRepository.CreatePlatform(platform);
         return CreatedAtRoute(nameof(GetPlatformById), new { platform.Id }, platform);
     }
+
+    [HttpGet]
+    public ActionResult<IEnumerable<Platform>> GetAllPlatforms()
+    {
+        return Ok(_platformRepository.GetAllPlatforms());
+    }
 }

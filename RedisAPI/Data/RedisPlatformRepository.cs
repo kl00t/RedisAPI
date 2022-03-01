@@ -21,12 +21,20 @@ public class RedisPlatformRepository : IPlatformRepository
         var database = _redis.GetDatabase();
         var jsonPlatform = JsonSerializer.Serialize(platform);
         database.StringSet(platform.Id, jsonPlatform);
+        database.SetAdd("PlatformsSet", jsonPlatform);
     }
 
-    public IEnumerable<Platform> GetAllPlatforms()
+    public IEnumerable<Platform?>? GetAllPlatforms()
     {
-        //var database = _redis.GetDatabase();
-        throw new NotImplementedException();
+        var database = _redis.GetDatabase();
+        var platformsSet = database.SetMembers("PlatformsSet");
+        if (platformsSet.Length > 0)
+        {
+            var platformsList = Array.ConvertAll(platformsSet, val => JsonSerializer.Deserialize<Platform>(val)).ToList();
+            return platformsList;
+        }
+
+        return null;
     }
 
     public Platform? GetPlatformById(string id)
